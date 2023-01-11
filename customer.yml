@@ -1,0 +1,38 @@
+## L3VPN connectiinos for al customers
+
+customers:
+  customer01:
+    customer-id: 1001
+    App: curl01
+    Algorithm: 128 #low latency
+    origin: R1
+    origin_gw: 10.1.4.1
+    origin_mask: 24
+    l3vpn: 
+      - id: 101
+        destination-PE-CE: R6
+        origin_gw: 10.6.4.1 ## conflicting prefiix
+        origin_mask: 24        
+    l3vpn: 
+      - id: 102
+        destination-PE-CE: R7
+        origin_gw: 10.7.4.1
+        origin_mask: 24
+  customer02:
+    customer-id: 1002
+    App: curl01
+    Algorithm: 128 #low latency
+    origin: R1
+    origin_gw: 10.10.10.1
+    origin_mask: 24
+    l3vpn: 
+      - id: 01
+        destination-PE-CEE: R6
+        origin_gw: 10.6.4.1
+        origin_mask: 24        
+    l3vpn: 
+      - id: 02
+        destination-PE-CE: R7
+        origin_gw: 10.7.10.1
+        origin_mask: 24
+
