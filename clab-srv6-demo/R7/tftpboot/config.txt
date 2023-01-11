@@ -3,9 +3,9 @@
 # Built on Wed Jun 22 14:38:17 PDT 2022 by builder in /builds/c/225B/R2/panos/main/sros
 # Configuration format version 22.5 revision 0
 
-# Generated 2023-01-07T20:43:45.2Z by admin from 172.31.255.29
-# Commit ID 3
-#   Committed 2023-01-07T20:43:45.1Z by admin (MD-CLI) from 172.31.255.29
+# Generated 2023-01-11T15:59:46.5Z by admin from 172.31.255.29
+# Commit ID 11
+#   Committed 2023-01-11T15:59:46.4Z by admin (MD-CLI) from 172.31.255.29
 
 configure {
     apply-groups ["baseport"]
@@ -357,10 +357,10 @@ configure {
     }
     policy-options {
         community "vrf4-export" {
-            member "target:64500:4" { }
+            member "target:64500:7" { }
         }
         community "vrf4-import" {
-            member "target:64500:4" { }
+            member "target:64500:7" { }
         }
         prefix-list "vrf1004-prefixes" {
             prefix 10.7.4.0/24 type exact {
@@ -804,9 +804,10 @@ configure {
         }
     }
     service {
-        vprn "4" {
+        vprn "7" {
             admin-state enable
             description "Test VRF for SRv6 Flex-Algorithm"
+            service-id 7
             customer "1"
             autonomous-system 64500
             segment-routing-v6 1 {
@@ -1335,11 +1336,11 @@ configure {
 persistent-indices {
     description "Persistent indices are maintained by the system and must not be modified."
     vrtr-id {
-        router-name "4" vrtr-id 5
+        router-name "7" vrtr-id 2
         router-name "VRF4-CE" vrtr-id 9
     }
     vrtr-if-id {
-        router-name "4" interface-name "PE-to-CE" vrtr-id 5 if-index 7
+        router-name "7" interface-name "PE-to-CE" vrtr-id 2 if-index 3
         router-name "Base" interface-name "to_R31" vrtr-id 1 if-index 2
         router-name "Base" interface-name "to_R32" vrtr-id 1 if-index 4
         router-name "VRF4-CE" interface-name "CE-to-PE" vrtr-id 9 if-index 14
@@ -1381,4 +1382,4 @@ persistent-indices {
     }
 }
 
-# Finished 2023-01-07T20:43:45.2Z
+# Finished 2023-01-11T15:59:46.5Z

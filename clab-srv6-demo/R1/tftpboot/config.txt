@@ -3,9 +3,9 @@
 # Built on Wed Jun 22 14:38:17 PDT 2022 by builder in /builds/c/225B/R2/panos/main/sros
 # Configuration format version 22.5 revision 0
 
-# Generated 2022-12-12T22:42:30.1Z by admin from 172.31.255.29
-# Commit ID 6
-#   Committed 2022-12-12T22:42:30.0Z by admin (MD-CLI) from 172.31.255.29
+# Generated 2023-01-11T16:41:58.9Z by admin from 172.31.255.29
+# Commit ID 12
+#   Committed 2023-01-11T16:41:58.8Z by admin (MD-CLI) from 172.31.255.29
 
 configure {
     apply-groups ["baseport"]
@@ -368,6 +368,12 @@ configure {
         community "vrf4-import" {
             member "target:64500:4" { }
         }
+        community "vrf4.1-export" {
+            member "target:64500:7" { }
+        }
+        community "vrf4.1-import" {
+            member "target:64500:7" { }
+        }
         prefix-list "vrf1004-prefixes" {
             prefix 10.1.4.0/24 type exact {
             }
@@ -444,7 +450,7 @@ configure {
                     }
                 }
                 action {
-                    action-type accept
+                    action-type next-policy
                     community {
                         add ["vrf4-export"]
                     }
@@ -456,6 +462,51 @@ configure {
                 from {
                     community {
                         name "vrf4-import"
+                    }
+                }
+                action {
+                    action-type accept
+                }
+            }
+            entry 20 {
+                from {
+                    community {
+                        name "vrf4.1-import"
+                    }
+                }
+                action {
+                    action-type accept
+                }
+            }
+            default-action {
+                action-type reject
+            }
+        }
+        policy-statement "vrf4.1-export" {
+            entry 10 {
+                from {
+                    protocol {
+                        name [bgp]
+                    }
+                }
+                to {
+                    protocol {
+                        name [bgp-vpn]
+                    }
+                }
+                action {
+                    action-type accept
+                    community {
+                        add ["vrf4.1-export"]
+                    }
+                }
+            }
+        }
+        policy-statement "vrf4.1-import" {
+            entry 10 {
+                from {
+                    community {
+                        name "vrf4.1-import"
                     }
                 }
                 action {
@@ -564,7 +615,7 @@ configure {
                 }
                 peer 192.0.2.7 {
                     discriminator 524288
-                }                
+                }
             }
         }
         interface "system" {
@@ -814,10 +865,10 @@ configure {
                     admin-state enable
                     route-distinguisher "64500:4"
                     vrf-import {
-                        policy ["vrf4-import"]
+                        policy ["vrf4-import" "vrf4.1-import"]
                     }
                     vrf-export {
-                        policy ["vrf4-export"]
+                        policy ["vrf4-export" "vrf4.1-export"]
                     }
                     srv6 {
                         instance 1
@@ -1332,15 +1383,6 @@ persistent-indices {
         router-name "VRF4-CE" interface-name "CE-to-PE" vrtr-id 6 if-index 11
         router-name "VRF4-CE" interface-name "LAN" vrtr-id 6 if-index 12
     }
-    mpls-lsp-index {
-        lsp-name "PCC_R1_R6_dis_symm" type 10 lsp-index 65537
-        lsp-name "R1-to-R6-SRTE-001" type 10 lsp-index 65536
-    }
-    mpls-path-index {
-        router-id 1 path-name "empty" path-index 1
-        router-id 1 path-name "pri" path-index 2
-        router-id 1 path-name "sec" path-index 3
-    }
     chassis-mac {
         client pxc index 0 pool 1 offset 1
         client pxc index 1 pool 1 offset 2
@@ -1377,4 +1419,4 @@ persistent-indices {
     }
 }
 
-# Finished 2022-12-12T22:42:30.1Z
+# Finished 2023-01-11T16:41:58.9Z
