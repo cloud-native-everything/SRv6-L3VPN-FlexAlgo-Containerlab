@@ -3,9 +3,12 @@
 # Built on Wed Jun 22 14:38:17 PDT 2022 by builder in /builds/c/225B/R2/panos/main/sros
 # Configuration format version 22.5 revision 0
 
-# Generated 2023-01-15T22:27:37.8Z by admin from 172.31.255.29
-# Commit ID 6
-#   Committed 2023-01-15T22:27:37.7Z by admin (MD-CLI) from 172.31.255.29
+# Generated 2023-01-19T19:35:34.1Z by admin from 172.31.255.29
+# Commit ID 2
+#   Committed 2023-01-19T19:35:34.0Z by admin (MD-CLI) from 172.31.255.29
+# Commit ID 1
+#   Committed 2023-01-19T19:31:35.8Z by system (MD-CLI) from Console
+#   Log       "System booted version B-22.5.R2."
 
 configure {
     apply-groups ["baseport"]
@@ -1019,7 +1022,7 @@ configure {
                     }
                     srv6 {
                         instance 1
-                        default-locator "Alg128-Locator"
+                        default-locator "Alg0-Locator"
                     }
                 }
             }
@@ -1597,4 +1600,4 @@ persistent-indices {
     }
 }
 
-# Finished 2023-01-15T22:27:37.8Z
+# Finished 2023-01-19T19:35:34.1Z

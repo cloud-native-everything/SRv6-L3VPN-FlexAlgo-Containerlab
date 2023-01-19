@@ -21,7 +21,7 @@ customers:
   customer02:
     customer-id: 1002
     App: curl01
-    Algorithm: 128 #low latency
+    Algorithm: 0 #no condition regarding latency
     origin: R1
     origin_gw: 10.10.10.1
     origin_mask: 24

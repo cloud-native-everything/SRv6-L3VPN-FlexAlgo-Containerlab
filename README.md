@@ -1,5 +1,5 @@
 # Segment Routing Lab: SRv6 L3VPN Flexible Algoritms Demo
-# DO NOT USE: Still work in progress!!
+
 
 This lab is showing a simple configuration and verification of SRv6 on Nokia routers to signal both IGP’s shortest path and Algorithms with specific metric conditions (i.e. 10ms). All router network interfaces for transport are <b>using IPv6</b> and we are encpasulating IPv4 traffic.
 
@@ -8,24 +8,33 @@ Objective: Create a traffic-engineered path between R1 and R6 that uses delay as
 Conditions:
 * IGP Metrics: All IGP link metrics are 100
 * Delay Metrics: All delay metrics are 10msec with the exception of the R3-R5 link, which is 15msec.
+* We have created two different customer. Conditions of latency is only apply to one of them
 
 
 ## Network Setup
 
 See topology on the next image:
 
-![Segment Routing SRvv6 l3vpn demo Containlerlab no ISIS Path](images/mau-rojas-nokia-srv6-sros-containerlab-l3vpn-demo-with-no-isis-path.png)
+![Segment Routing SRvv6 l3vpn demo Containlerlab no ISIS Path](images/srv6-flexible-algorithms-network-orchestration-mau-nokia-topology-1.png)
 
-Next image shows the same with one option of the shortest path using ISIS.
-![Segment Routing SRvv6 l3vpn demo Containlerlab with shortest ISIS Path](images/mau-rojas-nokia-srv6-sros-containerlab-l3vpn-demo-with-isis-path.png)
+Next images show the same with one option of the shortest path using ISIS.
+![Segment Routing SRvv6 l3vpn demo Containlerlab with shortest ISIS Path](images/srv6-flexible-algorithms-network-orchestration-mau-nokia-topology-2.png)
 
+![Segment Routing SRvv6 l3vpn demo Containlerlab with shortest ISIS Path](images/srv6-flexible-algorithms-network-orchestration-mau-nokia-topology-3.png)
 
 ## SRv6 with Flexible Algorithm
 Segment Routing (SR) is applied to the IPv6 data plane using 128-bit SIDs and the SR routing header (SRH). The 128-bit SRv6 SID consists of a Locator, a Function, and an Argument.
 * The Locator is encoded in the most significant bits of the SID. It is typically routable and leads to the node that instantiated the SID.
 * The Function identifies a local endpoint behaviour, such as End, End.X, End.DT4 or End.DT2U.
 The Locator is advertised into the IGP and is associated with an Algorithm. As a result, support for Flexible-Algorithm is inherited from day one, and a level of traffic engineering is possible without SRH overhead.
-* Flex-Algo 128 SRv6 Locators: Alg128: 2001:db8:4502:n::/64 where n is Node-ID, so 1 is R1, 6 is R6.
+* Flex-Algo 128 SRv6 Locators: Alg128: 2001:db8:4502:n::/64 where n is Node-ID, so 1 is R1, 6 is R6 and 7 is R7
+
+### Customer and VPN information
+L3VPN info and prefixes can be found in customer.yml file in this repo
+How we take care of the rest of the info like service-id and route target and route distinguisher, it's using the info from every customer. Check next pictures
+![Segment Routing SRvv6 l3vpn demo Containlerlab Naming Logic](images/srv6-flexible-algorithms-network-orchestration-mau-nokia-logic-1.png)
+
+![Segment Routing SRvv6 l3vpn demo Containlerlab Naming Logic](images/srv6-flexible-algorithms-network-orchestration-mau-nokia-logic-2.png)
 
 ## Requeriments
 Versions used are:
@@ -41,10 +50,7 @@ vr-sros                               22.5.R2                         f33cd7a373
 
 ## Overview
 
-
-
 If you are new with container lab, we recommed to check the post regading [Nokia SROS in the manual](https://containerlab.dev/manual/kinds/vr-sros/)
-
 
 ## Setting the lab
 
@@ -67,8 +73,7 @@ Checking elements in the lab
 ```
 Preping origin and destination containers:
 ```
-docker exec -i clab-srv6-demo-destination1 sh -s < destination1_config.sh
-docker exec -i clab-srv6-demo-origin1 sh -s < origin1_config.sh
+./prep_clients.sh
 ```
 Test connectivity (origin is 10.1.4.101 and destination is using 10.6.4.101)
 ```
@@ -82,7 +87,7 @@ PING 10.6.4.101 (10.6.4.101): 56 data bytes
 
 # Checking Router configurations
 
-All router smust be part of Algo128 to make it work
+All router must be part of Algo128 to make it work
 ```
 A:admin@R31# admin show configuration /configure router isis flexible-algorithms
     admin-state enable
@@ -263,6 +268,7 @@ A:admin@R2# show router isis database R2.00-00 level 2 detail | match "Nbr   : R
 
 ## Verifying SRv6-ISIS tunnel
 
+Check the route-table for tunnels
 ```
 A:admin@R1# show router route-table ipv6 2001:db8:4502:6::/64
 
@@ -272,8 +278,27 @@ IPv6 Route Table (Router: Base)
 Dest Prefix[Flags]                            Type    Proto     Age        Pref
       Next Hop[Interface Name]                                    Metric
 -------------------------------------------------------------------------------
-2001:db8:4502:6::/64                          Remote  ISIS      00h05m44s  15
-       2001:db8:4502:6::/64 (tunneled:SRV6-ISIS)                    40859
+2001:db8:4502:6::/64                          Remote  ISIS      00h00m02s  15
+       2001:db8:4502:6::/64 (tunneled:SRV6-ISIS)                    40818
+-------------------------------------------------------------------------------
+No. of Routes: 1
+Flags: n = Number of times nexthop is repeated
+       B = BGP backup route available
+       L = LFA nexthop available
+       S = Sticky ECMP requested
+===============================================================================
+
+[/]
+A:admin@R1# show router route-table ipv6 2001:db8:4502:7::/64
+
+===============================================================================
+IPv6 Route Table (Router: Base)
+===============================================================================
+Dest Prefix[Flags]                            Type    Proto     Age        Pref
+      Next Hop[Interface Name]                                    Metric
+-------------------------------------------------------------------------------
+2001:db8:4502:7::/64                          Remote  ISIS      00h00m07s  15
+       2001:db8:4502:7::/64 (tunneled:SRV6-ISIS)                    40818
 -------------------------------------------------------------------------------
 No. of Routes: 1
 Flags: n = Number of times nexthop is repeated
@@ -286,6 +311,24 @@ Flags: n = Number of times nexthop is repeated
 ```
 
 ```
+A:admin@R1# show router tunnel-table ipv6 2001:db8:4502:7::/64
+
+===============================================================================
+IPv6 Tunnel Table (Router: Base)
+===============================================================================
+Destination                                     Owner     Encap TunnelId  Pref
+Nexthop                                         Color           Metric
+-------------------------------------------------------------------------------
+2001:db8:4502:7::/64 [L]                        srv6-isis SRV6  524304    0
+  fe80::5054:ff:fe1c:9300-"to_R11"                                40795
+-------------------------------------------------------------------------------
+Flags: B = BGP or MPLS backup hop available
+       L = Loop-Free Alternate (LFA) hop available
+       E = Inactive best-external BGP route
+       k = RIB-API or Forwarding Policy backup hop
+===============================================================================
+
+[/]
 A:admin@R1# show router tunnel-table ipv6 2001:db8:4502:6::/64
 
 ===============================================================================
@@ -294,8 +337,8 @@ IPv6 Tunnel Table (Router: Base)
 Destination                                     Owner     Encap TunnelId  Pref
 Nexthop                                         Color           Metric
 -------------------------------------------------------------------------------
-2001:db8:4502:6::/64 [L]                        srv6-isis SRV6  524302    0
-  fe80::5054:ff:fe9f:7c00-"to_R11"                                40744
+2001:db8:4502:6::/64 [L]                        srv6-isis SRV6  524303    0
+  fe80::5054:ff:fe1c:9300-"to_R11"                                40795
 -------------------------------------------------------------------------------
 Flags: B = BGP or MPLS backup hop available
        L = Loop-Free Alternate (LFA) hop available
@@ -309,13 +352,20 @@ Flags: B = BGP or MPLS backup hop available
 ```
 A:admin@R1# traceroute 2001:db8:4502:6:: source-address 2001:db8:4502:1::
 traceroute to 2001:db8:4502:6:: from 2001:db8:4502:1::, 30 hops max, 60 byte packets
-  1  2001:db8:33ad::2 (2001:db8:33ad::2)    3.84 ms  1.79 ms  1.70 ms
-  2  2001:db8:33ad::12 (2001:db8:33ad::12)    3.50 ms  2.50 ms  2.38 ms
-  3  2001:db8:33ad::e (2001:db8:33ad::e)    4.61 ms  3.66 ms  3.63 ms
-  4  2001:db8:33ad::42 (2001:db8:33ad::42)    5.73 ms  4.48 ms  4.58 ms
-  5  2001:db8:33ad::4d (2001:db8:33ad::4d)    5.87 ms  5.65 ms  7.26 ms
+  1  2001:db8:33ad::2 (2001:db8:33ad::2)    3.86 ms  1.73 ms  1.73 ms
+  2  2001:db8:33ad::12 (2001:db8:33ad::12)    3.72 ms  2.70 ms  2.39 ms
+  3  2001:db8:33ad::e (2001:db8:33ad::e)    4.60 ms  5.17 ms  3.48 ms
+  4  2001:db8:33ad::42 (2001:db8:33ad::42)    6.17 ms  5.42 ms  4.65 ms
+  5  2001:db8:33ad::4d (2001:db8:33ad::4d)    6.16 ms  6.99 ms  6.38 ms
 [/]
-A:admin@R1#
+A:admin@R1# traceroute 2001:db8:4502:7:: source-address 2001:db8:4502:1::
+traceroute to 2001:db8:4502:7:: from 2001:db8:4502:1::, 30 hops max, 60 byte packets
+  1  2001:db8:33ad::2 (2001:db8:33ad::2)    2.34 ms  1.71 ms  1.49 ms
+  2  2001:db8:33ad::12 (2001:db8:33ad::12)    2.86 ms  2.76 ms  2.88 ms
+  3  2001:db8:33ad::e (2001:db8:33ad::e)    3.88 ms  3.58 ms  3.66 ms
+  4  2001:db8:33ad::42 (2001:db8:33ad::42)    5.18 ms  5.48 ms  4.68 ms
+  5  2001:db8:33ad::5e (2001:db8:33ad::5e)    6.86 ms  5.85 ms  8.93 ms
+[/]
 ```
 ```
 A:admin@R1# show router isis database R1.00-00 level 1 detail | match "SRv6 Locator" post-lines 10
@@ -417,14 +467,28 @@ A:admin@R2# show router isis database R2.00-00 level 2 detail | match "Nbr   : R
 
 ## Check changes in the route
 
+The prefixes used for every locator (Algorithm)
+* Alg0: 2001:db8:4501:6::
+* Alg128: 2001:db8:4502:6::
+
+Alg128 has change its path as you can see next
+
 ```
-A:admin@R1# traceroute 2001:db8:4502:6:: source-address 2001:db8:4502:1::
-traceroute to 2001:db8:4502:6:: from 2001:db8:4502:1::, 30 hops max, 60 byte packets
-  1  2001:db8:33ad::6 (2001:db8:33ad::6)    3.58 ms  1.80 ms  1.55 ms
-  2  2001:db8:33ad::a (2001:db8:33ad::a)    4.03 ms  2.82 ms  2.84 ms
-  3  2001:db8:33ad::16 (2001:db8:33ad::16)    5.10 ms  7.63 ms  3.93 ms
-  4  2001:db8:33ad::46 (2001:db8:33ad::46)    6.80 ms  4.87 ms  4.62 ms
-  5  2001:db8:33ad::56 (2001:db8:33ad::56)    6.41 ms  5.96 ms  6.34 ms
+A:admin@R1# traceroute 2001:db8:4501:6:: source-address 2001:db8:4501:1::
+traceroute to 2001:db8:4501:6:: from 2001:db8:4501:1::, 30 hops max, 60 byte packets
+  1  2001:db8:33ad::2 (2001:db8:33ad::2)    3.55 ms  1.68 ms  1.77 ms
+  2  2001:db8:33ad::12 (2001:db8:33ad::12)    3.66 ms  2.81 ms  2.60 ms
+  3  2001:db8:33ad::e (2001:db8:33ad::e)    44.6 ms  43.9 ms  43.7 ms
+  4  2001:db8:33ad::42 (2001:db8:33ad::42)    56.3 ms  44.9 ms  44.8 ms
+  5  2001:db8:33ad::4d (2001:db8:33ad::4d)    49.5 ms  46.0 ms  45.6 ms
+[/]
+A:admin@R1# traceroute 2001:db8:4502:6:: source-address 2001:db8:4501:1::
+traceroute to 2001:db8:4502:6:: from 2001:db8:4501:1::, 30 hops max, 60 byte packets
+  1  2001:db8:33ad::6 (2001:db8:33ad::6)    2.92 ms  1.66 ms  4.37 ms
+  2  2001:db8:33ad::a (2001:db8:33ad::a)    3.25 ms  2.78 ms  2.51 ms
+  3  2001:db8:33ad::16 (2001:db8:33ad::16)    4.74 ms  3.67 ms  3.52 ms
+  4  2001:db8:33ad::46 (2001:db8:33ad::46)    5.34 ms  4.44 ms  4.44 ms
+  5  2001:db8:33ad::4d (2001:db8:33ad::4d)    47.9 ms  45.9 ms  46.5 ms
 [/]
 ```
 
@@ -440,21 +504,22 @@ traceroute to 2001:db8:4502:6:: from 2001:db8:4502:1::, 30 hops max, 60 byte pac
 
 Start ping with some specific packet size from origin1 container
 ```
-# docker exec -it clab-srv6-demo-origin1 /bin/sh
-/ # ping -s 30000  10.6.4.101
+# docker exec -it clab-srv6-demo-origin1 ping -s 30000  10.6.4.101
 PING 10.6.4.101 (10.6.4.101): 30000 data bytes
-30008 bytes from 10.6.4.101: seq=0 ttl=60 time=61.094 ms
-30008 bytes from 10.6.4.101: seq=1 ttl=60 time=60.020 ms
-30008 bytes from 10.6.4.101: seq=2 ttl=60 time=55.876 ms
-30008 bytes from 10.6.4.101: seq=3 ttl=60 time=55.764 ms
-30008 bytes from 10.6.4.101: seq=4 ttl=60 time=55.642 ms
-30008 bytes from 10.6.4.101: seq=5 ttl=60 time=55.538 ms
-30008 bytes from 10.6.4.101: seq=6 ttl=60 time=55.287 ms
-30008 bytes from 10.6.4.101: seq=7 ttl=60 time=53.467 ms
-30008 bytes from 10.6.4.101: seq=8 ttl=60 time=59.940 ms
-30008 bytes from 10.6.4.101: seq=9 ttl=60 time=55.033 ms
+30008 bytes from 10.6.4.101: seq=0 ttl=60 time=98.014 ms
+30008 bytes from 10.6.4.101: seq=1 ttl=60 time=98.423 ms
+30008 bytes from 10.6.4.101: seq=2 ttl=60 time=98.280 ms
 ```
-
+and container origin2
+```
+# docker exec -it clab-srv6-demo-origin2 ping -s 30000  10.6.4.101
+PING 10.6.4.101 (10.6.4.101): 30000 data bytes
+30008 bytes from 10.6.4.101: seq=0 ttl=60 time=69.702 ms
+30008 bytes from 10.6.4.101: seq=1 ttl=60 time=59.359 ms
+30008 bytes from 10.6.4.101: seq=2 ttl=60 time=56.598 ms
+30008 bytes from 10.6.4.101: seq=3 ttl=60 time=56.455 ms
+30008 bytes from 10.6.4.101: seq=4 ttl=60 time=56.266 ms
+```
 Check traffic in R3, adding and removing delay
 ```
 A:admin@R3# monitor port 1/1/c5/1 rate
@@ -550,5 +615,96 @@ Octets                                               167                    167
 Packets                                                0                      0
 Errors                                                 0                      0
 Bits                                                1336                   1336
+Utilization (% of port capacity)                   ~0.00                  ~0.00
+```
+
+Check traffic in R2, adding and removing delay
+(Only one app has been moved from one path to the other)
+
+```
+A:admin@R2# monitor port 1/1/c5/1 rate
+
+===============================================================================
+Monitor statistics for Port 1/1/c5/1
+===============================================================================
+                                                   Input                 Output
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+At time t = 0 sec (Base Statistics)
+-------------------------------------------------------------------------------
+Octets                                           4320418                4466953
+Packets                                             5350                   5438
+Errors                                                 0                      0
+
+-------------------------------------------------------------------------------
+At time t = 10 sec (Mode: Rate)
+-------------------------------------------------------------------------------
+Octets                                             30950                  30971
+Packets                                               11                     11
+Errors                                                 0                      0
+Bits                                              247600                 247768
+Utilization (% of port capacity)                   ~0.00                  ~0.00
+
+-------------------------------------------------------------------------------
+At time t = 20 sec (Mode: Rate)
+-------------------------------------------------------------------------------
+Octets                                             31090                  31090
+Packets                                               11                     11
+Errors                                                 0                      0
+Bits                                              248720                 248720
+Utilization (% of port capacity)                   ~0.00                  ~0.00
+
+-------------------------------------------------------------------------------
+At time t = 30 sec (Mode: Rate)
+-------------------------------------------------------------------------------
+Octets                                             30969                  30969
+Packets                                               11                     11
+Errors                                                 0                      0
+Bits                                              247752                 247752
+Utilization (% of port capacity)                   ~0.00                  ~0.00
+
+-------------------------------------------------------------------------------
+At time t = 40 sec (Mode: Rate)
+-------------------------------------------------------------------------------
+Octets                                             30950                  30961
+Packets                                               11                     11
+Errors                                                 0                      0
+Bits                                              247600                 247688
+Utilization (% of port capacity)                   ~0.00                  ~0.00
+
+-------------------------------------------------------------------------------
+At time t = 50 sec (Mode: Rate)
+-------------------------------------------------------------------------------
+Octets                                             31143                  31109
+Packets                                               12                     12
+Errors                                                 0                      0
+Bits                                              249144                 248872
+Utilization (% of port capacity)                   ~0.00                  ~0.00
+
+-------------------------------------------------------------------------------
+At time t = 60 sec (Mode: Rate)
+-------------------------------------------------------------------------------
+Octets                                             40389                  58980
+Packets                                               16                     21
+Errors                                                 0                      0
+Bits                                              323112                 471840
+Utilization (% of port capacity)                   ~0.00                  ~0.00
+
+-------------------------------------------------------------------------------
+At time t = 70 sec (Mode: Rate)
+-------------------------------------------------------------------------------
+Octets                                             61945                  62073
+Packets                                               22                     22
+Errors                                                 0                      0
+Bits                                              495560                 496584
+Utilization (% of port capacity)                   ~0.00                  ~0.00
+
+-------------------------------------------------------------------------------
+At time t = 80 sec (Mode: Rate)
+-------------------------------------------------------------------------------
+Octets                                             61785                  61998
+Packets                                               21                     22
+Errors                                                 0                      0
+Bits                                              494280                 495984
 Utilization (% of port capacity)                   ~0.00                  ~0.00
 ```
