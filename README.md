@@ -1,4 +1,4 @@
-# Segment Routing Lab: SRv6 L3VPN Flexible Algoritms Demo
+# Segment Routing Lab: SRv6 L3VPN Flexible Algorithms Demo
 
 
 This lab is showing a simple configuration and verification of SRv6 on Nokia routers to signal both IGP’s shortest path and Algorithms with specific metric conditions (i.e. 10ms). All router network interfaces for transport are <b>using IPv6</b> and we are encpasulating IPv4 traffic.
